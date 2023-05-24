@@ -1,0 +1,53 @@
+[tool.black]
+line-length = 99
+target-version = ['py310']
+skip-string-normalization = true
+include = '\.pyi?$'
+force-exclude = '''
+(
+\.git
+| \.hg
+| \.mypy_cache
+| \.tox
+| \.venv
+| _build
+| buck-out
+| build
+| \/migrations\/
+)
+'''
+
+[tool.commitizen]
+version = "0.2.0"
+version_files = [
+  "__version__.py",
+]
+
+[tool.docformatter]
+wrap-summaries=72
+in-place=true
+
+[tool.flake8]
+max-doc-length = 99
+max-line-length = 99
+exclude = [
+    # No need to traverse our git directory
+    ".git",
+    # There's no value in checking cache directories
+    "__pycache__",
+    # This contains our built documentation
+    "docs/*",
+    "*/migrations/*"
+    # TODO: Add new directories that we don't want to check, for example: database migrations.
+]
+count = true
+
+[tool.isort]
+profile = "black"
+# TODO: Add new local application/library package.
+known_first_party = []
+sections = ["FUTURE","STDLIB","THIRDPARTY","FIRSTPARTY","LOCALFOLDER"]
+line_length = 99
+combine_as_imports = true
+# TODO: Add new directories that we don't want to check, for example: database migrations.
+skip_glob = ["*/migrations/*"]

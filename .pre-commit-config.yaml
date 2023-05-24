@@ -1,0 +1,50 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+#
+# You must run next command first time:
+#     pre-commit install
+#
+default_language_version:
+    python: python3.10  # TODO: upgrade to newer Python version if it's required.
+default_stages: [commit]
+repos:
+  # black and docformatter always at top of the list.
+  - repo: https://github.com/ambv/black
+    rev: 22.12.0
+    hooks:
+      - id: black
+        description: Python code formatter.
+  - repo: https://github.com/PyCQA/docformatter
+    rev: v1.5.1
+    hooks:
+      - id: docformatter
+        description: Formats docstrings to follow PEP 257.
+        args: [--config=./pyproject.toml]
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        description: Command-line utility for enforcing style consistency across Python projects.
+        entry: pflake8
+        additional_dependencies: [pyproject-flake8]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        description: Trims trailing whitespace.
+        types: [python]
+      - id: double-quote-string-fixer
+        description: Replaces double quoted strings with single quoted strings.
+        types: [python]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        description: Reorders imports in python files.
+        args: [--settings-path=pyproject.toml, --filter-files]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+      - id: pyupgrade
+        description: Automatically upgrade syntax for newer versions.
+        args: [--py36-plus]  # TODO: upgrade to newer Python version if it's required.

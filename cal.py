@@ -2,8 +2,9 @@ import datetime
 import os.path
 import pickle
 import re
+from enum import Enum
+from typing import List
 
-import dateutil.parser
 from colorama import Fore, Style, init
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -19,8 +20,118 @@ JIRA_PATTERN_NAME = re.compile('^([A-Z][A-Z0-9]+[-][0-9]+): ?(.*)')
 
 init()
 
-class Calendar:
+CLAIM_OK = '✅ '
 
+
+class ClaimStatus(Enum):
+    UNKNOWN = 0
+    ERROR = 1
+    SKIP = 2
+    ADD = 3
+
+
+FORE_COLOR_STATUS_MAPPING = {
+    ClaimStatus.ERROR: Fore.RED,
+    ClaimStatus.SKIP: Fore.YELLOW,
+    ClaimStatus.ADD: Fore.GREEN,
+}
+
+
+class CalendarEntry:
+    def __init__(self, service, calendar_id, **kwargs):
+        self.service = service
+        self.calendar_id = calendar_id
+        self.entry = kwargs
+        self.load_input(**kwargs)
+        self.load_status(**kwargs)
+
+    def load_input(self, **entry):
+        self.entry_id = entry['id']
+        self.summary = entry['summary']
+        self.start_str = entry['start'].get('dateTime', entry['start'].get('date'))
+        self.end_str = entry['end'].get('dateTime')
+        self.start = datetime.datetime.fromisoformat(self.start_str[0:-1])
+        self.end = datetime.datetime.fromisoformat(self.end_str[0:-1])
+        self.description = None
+        self.issue_id = None
+
+    def load_status(self, **entry):
+        summary = entry['summary']
+
+        self._claim_status = ClaimStatus.UNKNOWN
+
+        if summary.startswith(CLAIM_OK):
+            self._claim_status = ClaimStatus.ADD
+            summary = summary.replace(CLAIM_OK, '')
+
+        jira_match = JIRA_PATTERN_NAME.search(summary)
+
+        if not jira_match:
+            print(f"ERROR! Invalid entry: {entry['summary']}")
+
+            return
+
+        self.description = jira_match.group(2).strip()
+        self.issue_id = jira_match.group(1)
+
+    @property
+    def duration_in_hours(self):
+        return self.duration_in_seconds / 3600.0
+
+    @property
+    def duration_in_seconds(self):
+        return (self.end - self.start).seconds
+
+    def print_summary(self):
+        fore_color = Style.RESET_ALL
+        status = None
+
+        if self.claim_status != ClaimStatus.UNKNOWN:
+            fore_color = FORE_COLOR_STATUS_MAPPING[self.claim_status]
+            status = self.claim_status.name
+
+        print(
+            fore_color
+            + f'{status + ": " if status else ""}'
+            + f'[{self.issue_id}] '
+            + f'hours={self.duration_in_hours}, '
+            + f'description={self.description}, '
+            + f'started={self.start_str}'
+            + Style.RESET_ALL
+        )
+
+    @property
+    def summary(self):
+        return self._summary
+
+    @summary.setter
+    def summary(self, value):
+        self._summary = value
+        self.entry['summary'] = self._summary
+
+    @property
+    def claim_status(self):
+        return self._claim_status
+
+    @claim_status.setter
+    def claim_status(self, value):
+        if self._claim_status == value:
+            # No change in claim status
+            return
+
+        self._claim_status = value
+
+        if self._claim_status in (
+            ClaimStatus.ADD,
+            ClaimStatus.SKIP,
+        ) and not self.summary.startswith(CLAIM_OK):
+            self.summary = CLAIM_OK + self.summary
+            self.service.events().update(
+                calendarId=self.calendar_id, eventId=self.entry_id, body=self.entry
+            ).execute()
+
+
+class Calendar:
     def __init__(self, calendar_name):
         self.__service = None
         self.__calendar = None
@@ -46,10 +157,12 @@ class Calendar:
 
     def _get_calendar_from_name(self, calendar_name):
         calendarlist = self.service.calendarList().list().execute()
-        ic = list(filter(lambda x: x['summary'] == calendar_name, [c for c in calendarlist['items']]))
+        ic = list(
+            filter(lambda x: x['summary'] == calendar_name, [c for c in calendarlist['items']])
+        )
 
         if not ic:
-            raise Exception(f"[ERROR] Calendar {calendar_name} not found!")
+            raise Exception(f'[ERROR] Calendar {calendar_name} not found!')
 
         return ic[0]
 
@@ -81,13 +194,13 @@ class Calendar:
 
         return service
 
-    def get_entries(self, date_from, date_to=None):  # list(CalendarEntry)
+    def get_entries(self, date_from, date_to=None) -> List[CalendarEntry]:
         raw_entries = self._get_raw_entries(date_from, date_to)
 
         entries = []
 
         for raw_entry in raw_entries:
-            calendar_entry = CalendarEntry(**raw_entry)
+            calendar_entry = CalendarEntry(self.service, self.calendar_id, **raw_entry)
 
             if calendar_entry:
                 entries.append(calendar_entry)
@@ -116,17 +229,6 @@ class Calendar:
 
         return entries
 
-    def update_event_status(self, entries):
-        for entry in entries:
-            if entry.claim_status != 2:
-                # No change in claim status
-                continue
-
-            entry.summary = '✅ ' + entry.summary
-            self.service.events().update(
-                calendarId=self.calendar_id, eventId=entry['id'], body=entry
-            ).execute()
-
     @classmethod
     def get_calendars(cls):
         service = cls._get_service()
@@ -134,7 +236,6 @@ class Calendar:
 
         for calendar in calendarlist['items']:
             print(f"{calendar['summary']:<30} {calendar['id']:>30}")
-
 
     def get_week_entries(self):
         now = datetime.datetime.now()
@@ -145,69 +246,3 @@ class Calendar:
 
         for entry in entries:
             entry.print_summary()
-
-
-class CalendarEntry:
-
-    def __init__(self, **kwargs):
-        self.entry = kwargs
-        self.load_input(**kwargs)
-
-    def load_input(self, **entry):
-        self.entry_id = entry['id']
-        self.summary = entry['summary']
-        self.start_str = entry['start'].get('dateTime', entry['start'].get('date'))
-        self.end_str = entry['end'].get('dateTime')
-        self.start = datetime.datetime.fromisoformat(self.start_str[0:-1])
-        self.end = datetime.datetime.fromisoformat(self.end_str[0:-1])
-        self.start_jira = self.start.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-        self.end_jira = self.end.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-        self.description = None
-        self.issue_id = None
-        self.claim_status = -1
-
-        if 'summary' not in entry:
-            return
-
-        jira_match = JIRA_PATTERN_NAME.search(entry['summary'])
-
-        if not jira_match:
-            print(f"ERROR! Invalid entry: {entry['summary']}")
-
-            return
-
-        self.description = jira_match.group(2).strip()
-        self.issue_id = jira_match.group(1)
-
-    @property
-    def duration_in_hours(self):
-        return self.duration_in_seconds / 3600.0
-
-    @property
-    def duration_in_seconds(self):
-        return (self.end - self.start).seconds
-
-    def print_summary(self):
-        fore = ''
-        status = None
-
-        if self.claim_status == 0:
-            status = "ERROR"
-            fore = Fore.RED
-        elif self.claim_status == 1:
-            status = "SKIP"
-            fore = Fore.YELLOW
-        elif self.claim_status == 2:
-            status = "ADD"
-            fore = Fore.GREEN
-
-        print(fore + f'{status + ": " if status else ""}[{self.issue_id}] hours={self.duration_in_hours}, description={self.description}, started={self.start_str}' + Style.RESET_ALL)
-
-    @property
-    def summary(self):
-        return self._summary
-
-    @summary.setter
-    def summary(self, value):
-        self._summary = value
-        self.entry['summary'] = self._summary

@@ -1,11 +1,9 @@
-from typing import List
-
 import arrow
 from colorama import Back, Fore, Style, init
 from jira import JIRA, JIRAError
 
 import config
-from cal import CalendarEntry, ClaimStatus
+from claimer.cal import CalendarEntry, ClaimStatus
 
 
 class IssueTracker:
@@ -19,7 +17,7 @@ class IssueTracker:
 
         return JIRA(options=options, basic_auth=(user_jira, pass_jira))
 
-    def add_worklog(self, entries_calendar: List[CalendarEntry]):
+    def add_worklog(self, entries_calendar: list[CalendarEntry]):
         for entry in entries_calendar:
             self.add_entry(entry)
             entry.print_summary()

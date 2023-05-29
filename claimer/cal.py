@@ -3,7 +3,6 @@ import os.path
 import pickle
 import re
 from enum import Enum
-from typing import List
 
 from colorama import Fore, Style, init
 from google.auth.transport.requests import Request
@@ -194,7 +193,7 @@ class Calendar:
 
         return service
 
-    def get_entries(self, date_from, date_to=None) -> List[CalendarEntry]:
+    def get_entries(self, date_from, date_to=None) -> list[CalendarEntry]:
         raw_entries = self._get_raw_entries(date_from, date_to)
 
         entries = []

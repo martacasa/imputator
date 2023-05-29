@@ -1,4 +1,3 @@
-
 def print_weekly_summary(calendar_entries):
     target_time_in_week = 40
     weeks = {}
@@ -10,9 +9,9 @@ def print_weekly_summary(calendar_entries):
         if week_number not in weeks:
             weeks[week_number] = {}
 
-        issue_id = entry.issue_id or "UNKNOWN"
-        weeks[week_number][issue_id] = (
-            entry.duration_in_hours + weeks[week_number].get(entry.issue_id, 0)
+        issue_id = entry.issue_id or 'UNKNOWN'
+        weeks[week_number][issue_id] = entry.duration_in_hours + weeks[week_number].get(
+            entry.issue_id, 0
         )
 
     for week, issues in weeks.items():
@@ -21,12 +20,9 @@ def print_weekly_summary(calendar_entries):
         total_time_in_week = 0
 
         for issue_id in issues.keys():
-            print("ISSUE_ID:", issue_id)
+            print('ISSUE_ID:', issue_id)
             time_spent_in_issue = issues[issue_id]
-            print("TIME:", time_spent_in_issue)
-            if issue_id is None:
-                import ipdb
-                ipdb.set_trace()
+            print('TIME:', time_spent_in_issue)
             total_time_in_week = total_time_in_week + time_spent_in_issue
             print(f'{issue_id: <15} ... {time_spent_in_issue:>6} h')
         print(f'Total time in week {total_time_in_week}')

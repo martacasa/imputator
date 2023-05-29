@@ -36,6 +36,12 @@ repos:
       - id: double-quote-string-fixer
         description: Replaces double quoted strings with single quoted strings.
         types: [python]
+      - id: debug-statements
+      - id: check-ast
+      - id: check-json
+      - id: check-xml
+      - id: check-toml
+      - id: check-yaml
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -47,4 +53,4 @@ repos:
     hooks:
       - id: pyupgrade
         description: Automatically upgrade syntax for newer versions.
-        args: [--py36-plus]  # TODO: upgrade to newer Python version if it's required.
+        args: [--py310-plus]  # TODO: upgrade to newer Python version if it's required.

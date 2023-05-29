@@ -68,9 +68,6 @@ def cli(
         Calendar(calendar_name).get_week_entries()
         sys.exit()
 
-    from_date = datetime.strptime(from_date, '%d-%m-%Y')
-    to_date = datetime.strptime(to_date, '%d-%m-%Y')
-
     calendar_entries = Calendar(calendar_name).get_entries(from_date, to_date)
 
     if weeklyreport:

@@ -1,15 +1,19 @@
+from typing import List
+
 import arrow
 from colorama import Back, Fore, Style, init
 from jira import JIRA, JIRAError
 
-import config
+from claimer import config
 from claimer.cal import CalendarEntry, ClaimStatus
 
 
 class IssueTracker:
     def __init__(self):
         init()
-        self.jira = self._get_jira_connection(config.server, config.user_jira, config.pass_jira)
+        self.jira = self._get_jira_connection(
+            config.jira_server, config.jira_user, config.jira_pass
+        )
 
     @staticmethod
     def _get_jira_connection(server, user_jira, pass_jira):
@@ -17,7 +21,7 @@ class IssueTracker:
 
         return JIRA(options=options, basic_auth=(user_jira, pass_jira))
 
-    def add_worklog(self, entries_calendar: list[CalendarEntry]):
+    def add_worklog(self, entries_calendar: List[CalendarEntry]):
         for entry in entries_calendar:
             self.add_entry(entry)
             entry.print_summary()
@@ -68,7 +72,7 @@ class IssueTracker:
             worklog.started
             for worklog in worklogs
             if hasattr(worklog.author, 'emailAddress')
-            and worklog.author.emailAddress == config.user_jira
+            and worklog.author.emailAddress == config.jira_user
         ]:
             worklogs_starts.append(arrow.get(worklog))
 

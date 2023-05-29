@@ -3,11 +3,14 @@ import os.path
 import pickle
 import re
 from enum import Enum
+from typing import List
 
 from colorama import Fore, Style, init
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient import discovery
+
+from claimer.config import CONFIG_DIR
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = [
@@ -173,27 +176,31 @@ class Calendar:
         """
         creds = None
 
-        if os.path.exists('token.pickle'):
-            with open('token.pickle', 'rb') as token:
+        token_file_path = os.path.join(CONFIG_DIR, 'token.pickle')
+
+        if os.path.exists(token_file_path):
+            with open(token_file_path, 'rb') as token:
                 creds = pickle.load(token)
         # If there are no (valid) credentials available, let
         # the user log in.
+
+        credentials_file_path = os.path.join(CONFIG_DIR, 'credentials.json')
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(credentials_file_path, SCOPES)
                 creds = flow.run_local_server()
             # Save the credentials for the next run
-            with open('token.pickle', 'wb') as token:
+            with open(token_file_path, 'wb') as token:
                 pickle.dump(creds, token)
 
         service = discovery.build('calendar', 'v3', credentials=creds)
 
         return service
 
-    def get_entries(self, date_from, date_to=None) -> list[CalendarEntry]:
+    def get_entries(self, date_from, date_to=None) -> List[CalendarEntry]:
         raw_entries = self._get_raw_entries(date_from, date_to)
 
         entries = []

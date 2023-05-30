@@ -16,10 +16,10 @@ class IssueTracker:
         )
 
     @staticmethod
-    def _get_jira_connection(server, user_jira, pass_jira):
-        options = {'server': server}
+    def _get_jira_connection(jira_server, jira_user, jira_pass):
+        options = {'server': jira_server}
 
-        return JIRA(options=options, basic_auth=(user_jira, pass_jira))
+        return JIRA(options=options, basic_auth=(jira_user, jira_pass))
 
     def add_worklog(self, entries_calendar: List[CalendarEntry]):
         for entry in entries_calendar:

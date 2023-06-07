@@ -4,19 +4,29 @@ from datetime import datetime
 import click
 
 from claimer.cal import Calendar
+from claimer.helper import get_default_from, get_default_to, validate_date
 from claimer.issuetracker import IssueTracker
 from claimer.report import print_weekly_summary
-from claimer.helper import get_default_from, get_default_to, validate_date
 
 
 @click.command()
 @click.option(
-    '--from-date', help='Date from.', required=False, show_default=True, default=get_default_from,
-    callback=validate_date
+    '--from',
+    'from_date',
+    help='Date from. Defaults to first day of current month',
+    required=False,
+    show_default=True,
+    default=get_default_from,
+    callback=validate_date,
 )
 @click.option(
-    '--to-date', help='Date to.', required=False, show_default=True, default=get_default_to,
-    callback=validate_date
+    '--to',
+    'to_date',
+    help='Date to. Defaults to today',
+    required=False,
+    show_default=True,
+    default=get_default_to,
+    callback=validate_date,
 )
 @click.option(
     '--calendar-name',

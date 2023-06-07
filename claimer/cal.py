@@ -5,6 +5,7 @@ import re
 from enum import Enum
 from typing import List
 
+import pytz
 from colorama import Fore, Style, init
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -52,8 +53,8 @@ class CalendarEntry:
         self.summary = entry['summary']
         self.start_str = entry['start'].get('dateTime', entry['start'].get('date'))
         self.end_str = entry['end'].get('dateTime')
-        self.start = datetime.datetime.fromisoformat(self.start_str[0:-1])
-        self.end = datetime.datetime.fromisoformat(self.end_str[0:-1])
+        self.start = pytz.UTC.localize(datetime.datetime.fromisoformat(self.start_str[:-1]))
+        self.end = pytz.UTC.localize(datetime.datetime.fromisoformat(self.end_str[0:-1]))
         self.description = None
         self.issue_id = None
 

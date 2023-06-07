@@ -1,5 +1,5 @@
-import os
 import configparser
+import os
 
 HOME = os.path.expanduser('~')
 
@@ -25,15 +25,15 @@ def load_config():
         jira_server = None
 
     if not jira_user:
-        jira_user = input("Enter jira user:")
+        jira_user = input('Enter jira user:')
         config.set('JIRA', 'jira_user', jira_user)
 
     if not jira_pass:
-        jira_pass = input("Enter jira pass:")
+        jira_pass = input('Enter jira pass:')
         config.set('JIRA', 'jira_pass', jira_pass)
 
     if not jira_server:
-        jira_server = input("Enter jira server:")
+        jira_server = input('Enter jira server:')
         config.set('JIRA', 'jira_server', jira_server)
 
     with open(CONFIG_FILE, 'w') as config_file:

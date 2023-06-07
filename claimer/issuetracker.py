@@ -1,6 +1,7 @@
+import datetime
 from typing import List
 
-import arrow
+import pytz
 from colorama import Back, Fore, Style, init
 from jira import JIRA, JIRAError
 
@@ -40,7 +41,7 @@ class IssueTracker:
                 issue=entry.issue_id,
                 timeSpentSeconds=entry.duration_in_seconds,
                 comment=entry.description,
-                started=entry.start,
+                started=entry.start.astimezone(pytz.UTC),
                 user=self.jira.current_user(),
             )
             entry.claim_status = ClaimStatus.ADD
@@ -74,6 +75,6 @@ class IssueTracker:
             if hasattr(worklog.author, 'emailAddress')
             and worklog.author.emailAddress == config.jira_user
         ]:
-            worklogs_starts.append(arrow.get(worklog))
+            worklogs_starts.append(datetime.datetime.strptime(worklog, '%Y-%m-%dT%H:%M:%S.000%z'))
 
-        return arrow.get(entry.start) in worklogs_starts
+        return entry.start in worklogs_starts

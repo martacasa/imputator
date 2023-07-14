@@ -71,6 +71,7 @@ class CalendarEntry:
 
         if not jira_match:
             print(f"ERROR! Invalid entry: {entry['summary']}")
+            self.description = summary
 
             return
 
@@ -95,11 +96,11 @@ class CalendarEntry:
 
         print(
             fore_color
-            + f'{status + ": " if status else ""}'
-            + f'[{self.issue_id}] '
-            + f'hours={self.duration_in_hours}, '
-            + f'description={self.description}, '
-            + f'started={self.start_str}'
+            + f'{status: <6}'
+            + f'[{str(self.issue_id): >14} ] '
+            + f'{str(self.description)[0:50]: >50} | '
+            + f'{self.start.strftime("%Y-%m-%dT%H:%M")} | '
+            + f'{self.duration_in_hours: <4}h'
             + Style.RESET_ALL
         )
 

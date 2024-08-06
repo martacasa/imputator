@@ -52,7 +52,7 @@ class IssueTracker:
             if exc.status_code == '400':
                 print(Back.RED + Fore.WHITE + 'JIRA: Sin permisos' + Style.RESET_ALL)
             else:
-                print(Back.RED + Fore.WHITE + 'JIR: Error desconocido' + Style.RESET_ALL)
+                print(Back.RED + Fore.WHITE + 'JIRA: Error desconocido' + Style.RESET_ALL)
         except Exception as exc:
             print(Back.RED + Fore.WHITE + 'JIRA: Error' + str(exc) + Style.RESET_ALL)
             entry.claim_status = ClaimStatus.ERROR

@@ -24,6 +24,7 @@ JIRA_PATTERN_NAME = re.compile('^([A-Z][A-Z0-9]+[-][0-9]+): ?(.*)')
 init()
 
 CLAIM_OK = '✅ '
+CLAIM_NOK = '❌ '
 
 
 class ClaimStatus(Enum):
@@ -50,7 +51,7 @@ class CalendarEntry:
 
     def load_input(self, **entry):
         self.entry_id = entry['id']
-        self.summary = entry['summary']
+        self.summary = entry.get('summary', '')
         self.start_str = entry['start'].get('dateTime', entry['start'].get('date'))
         self.end_str = entry['end'].get('dateTime')
         self.start = pytz.UTC.localize(datetime.datetime.fromisoformat(self.start_str[:-1]))
@@ -66,11 +67,13 @@ class CalendarEntry:
         if summary.startswith(CLAIM_OK):
             self._claim_status = ClaimStatus.ADD
             summary = summary.replace(CLAIM_OK, '')
+        if summary.startswith(CLAIM_NOK):
+            summary = summary.replace(CLAIM_NOK, '')
 
         jira_match = JIRA_PATTERN_NAME.search(summary)
 
         if not jira_match:
-            print(f"ERROR! Invalid entry: {entry['summary']}")
+            # Invalid entry
             self.description = summary
 
             return
@@ -97,7 +100,7 @@ class CalendarEntry:
         print(
             fore_color
             + f'{status: <6}'
-            + f'[{str(self.issue_id): >14} ] '
+            + f'[ {str(self.issue_id): <14}] '
             + f'{str(self.description)[0:50]: >50} | '
             + f'{self.start.strftime("%Y-%m-%dT%H:%M")} | '
             + f'{self.duration_in_hours: <4}h'
@@ -124,12 +127,21 @@ class CalendarEntry:
             return
 
         self._claim_status = value
+        update_summary = False
 
         if self._claim_status in (
             ClaimStatus.ADD,
             ClaimStatus.SKIP,
         ) and not self.summary.startswith(CLAIM_OK):
+            # TODO gestionar de otra forma
+            self.summary = self.summary.replace(CLAIM_NOK, '')
             self.summary = CLAIM_OK + self.summary
+            update_summary = True
+        elif self._claim_status == ClaimStatus.ERROR and not self.summary.startswith(CLAIM_NOK):
+            self.summary = CLAIM_NOK + self.summary
+            update_summary = True
+
+        if update_summary:
             self.service.events().update(
                 calendarId=self.calendar_id, eventId=self.entry_id, body=self.entry
             ).execute()
@@ -216,7 +228,7 @@ class Calendar:
         return entries
 
     def _get_raw_entries(self, date_from, date_to=None, num_entries=1000):
-        print(f'JIRAS from {date_from}')
+        print(f'JIRAS from {date_from} to {date_to}')
         params = {
             'calendarId': self.calendar_id,
             'timeMin': date_from.isoformat() + 'Z',

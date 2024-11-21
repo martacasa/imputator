@@ -1,7 +1,7 @@
-import calendar
 from datetime import datetime
 
 import click
+
 
 def get_default_from() -> str:
     """Returns first day of current month"""
@@ -12,10 +12,7 @@ def get_default_from() -> str:
 
 def get_default_to() -> str:
     """Returns today"""
-    today = datetime.today()
-    last_dom = calendar.monthrange(today.year, today.month)[1]
-
-    return datetime.today().replace(day=last_dom).strftime('%d-%m-%Y')
+    return datetime.today().strftime('%d-%m-%Y')
 
 
 def validate_date(*args) -> datetime:

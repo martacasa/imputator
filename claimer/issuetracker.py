@@ -1,6 +1,7 @@
+import datetime
 from typing import List
 
-import arrow
+import pytz
 from colorama import Back, Fore, Style, init
 from jira import JIRA, JIRAError
 
@@ -16,10 +17,10 @@ class IssueTracker:
         )
 
     @staticmethod
-    def _get_jira_connection(server, user_jira, pass_jira):
-        options = {'server': server}
+    def _get_jira_connection(jira_server, jira_user, jira_pass):
+        options = {'server': jira_server}
 
-        return JIRA(options=options, basic_auth=(user_jira, pass_jira))
+        return JIRA(options=options, basic_auth=(jira_user, jira_pass))
 
     def add_worklog(self, entries_calendar: List[CalendarEntry]):
         for entry in entries_calendar:
@@ -40,7 +41,7 @@ class IssueTracker:
                 issue=entry.issue_id,
                 timeSpentSeconds=entry.duration_in_seconds,
                 comment=entry.description,
-                started=entry.start,
+                started=entry.start.astimezone(pytz.UTC),
                 user=self.jira.current_user(),
             )
             entry.claim_status = ClaimStatus.ADD
@@ -51,7 +52,7 @@ class IssueTracker:
             if exc.status_code == '400':
                 print(Back.RED + Fore.WHITE + 'JIRA: Sin permisos' + Style.RESET_ALL)
             else:
-                print(Back.RED + Fore.WHITE + 'JIR: Error desconocido' + Style.RESET_ALL)
+                print(Back.RED + Fore.WHITE + 'JIRA: Error desconocido' + Style.RESET_ALL)
         except Exception as exc:
             print(Back.RED + Fore.WHITE + 'JIRA: Error' + str(exc) + Style.RESET_ALL)
             entry.claim_status = ClaimStatus.ERROR
@@ -74,6 +75,6 @@ class IssueTracker:
             if hasattr(worklog.author, 'emailAddress')
             and worklog.author.emailAddress == config.jira_user
         ]:
-            worklogs_starts.append(arrow.get(worklog))
+            worklogs_starts.append(datetime.datetime.strptime(worklog, '%Y-%m-%dT%H:%M:%S.000%z'))
 
-        return arrow.get(entry.start) in worklogs_starts
+        return entry.start in worklogs_starts
